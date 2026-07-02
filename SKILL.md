@@ -14,11 +14,13 @@ Claude Code). **Draft-only**: nothing publishes or posts; a human posts each pie
 
 ## FIRST-RUN RULE (do this before anything else)
 
-If there is no `<cwd>/.claude/atomizekit.config.json` AND no `brand/brand.json` in
-this skill dir, the brand is not configured. **Run `commands/setup.md` first** — it
-analyzes the host codebase, interviews the user, and writes the config. Do not
-guess brand facts. Every script below fails loud with the same instruction if the
-config is missing.
+Resolve config in this order: `<cwd>/.claude/atomizekit.config.json` (host project),
+then the skill's `brand/brand.json` (standalone fallback). If neither exists, or if
+**cwd is a project** (has `package.json`/`.git`) and it has no host config of its own,
+**run `commands/setup.md` first** — do not silently reuse a `brand/brand.json` left by
+a different project. Setup analyzes the host codebase, interviews the user, and writes
+`<cwd>/.claude/atomizekit.config.json`. Never guess brand facts. Scripts fail loud
+with this same instruction when config is missing.
 
 Throughout, `<skill>` = this skill's directory; run scripts from the user's project
 root (cwd) so blog/distribution/data land in their repo.
@@ -37,15 +39,24 @@ root (cwd) so blog/distribution/data land in their repo.
    platform, canonical link in each, one woven feature except Reddit). Fill
    `post.json` `stat`/`statLabel` (one REAL number from the blog) and `scenes[]`
    (from the YouTube variant) for the video.
-4. **Visuals** — `commands/visuals.md`:
-   `node <skill>/scripts/render_cards.mjs <slug>` (4 PNGs),
-   `node <skill>/scripts/render_reel.mjs <slug>` (voiced stat reel),
-   `node <skill>/scripts/render_short.mjs <slug>` (voiced kinetic-text short).
+4. **Visuals** — `commands/visuals.md`. All output lands in
+   `<distributionDir>/<slug>/media/` in the user's project.
+   - `node <skill>/scripts/render_cards.mjs <slug>` → 4 PNGs. Keyless, Node-only —
+     always available.
+   - Video needs the hyperframes toolchain: gate on `npx hyperframes doctor --json`
+     (FFmpeg 7+, Chrome green) first, and the voiced renders below need
+     `pip install kokoro-onnx soundfile` (local TTS). If those aren't present, ship
+     the cards + text drafts and tell the user what to install for video — don't
+     fake a render.
+   - `node <skill>/scripts/render_reel.mjs <slug>` → voiced stat reel.
+   - `node <skill>/scripts/render_short.mjs <slug>` → voiced kinetic-text short.
 5. **Report** every draft + media path. Remind: draft-only, the user posts each by
    hand. Do NOT commit/publish unless asked.
-6. **Measure (own cadence)** — `node <skill>/scripts/geo/measure.ts` runs prompts ×
-   N through the (stubbed, keyless) citation providers, writes
-   `data/geo/next-topics.json` → back to step 1. Loop closed.
+
+**Separate cadence — Measure (not part of each content job):** on a schedule you
+choose, `node <skill>/scripts/geo/measure.ts` runs prompts × N through the (stubbed,
+keyless) citation providers and writes `data/geo/next-topics.json`, which step 1 of
+the NEXT job reads. Run it periodically, not at the end of every piece.
 
 ## Commands & references
 
