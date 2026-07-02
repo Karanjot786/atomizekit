@@ -1,0 +1,22 @@
+{
+  "name": "atomizekit",
+  "version": "1.0.0",
+  "description": "Brand-agnostic, keyless content-engine skill: blog -> platform posts -> images -> video.",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "node --test 'scripts/tests/*.test.mjs' && node scripts/check_render.mjs"
+  },
+  "keywords": [],
+  "author": "Karanjot Singh",
+  "license": "MIT",
+  "dependencies": {
+    "takumi-js": "^1.8.7"
+  }
+}
