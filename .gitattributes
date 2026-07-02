@@ -1,0 +1,11 @@
+# Treat rendered/vendored assets as binary + exclude from language stats.
+*.png binary
+*.mp4 binary
+*.otf binary
+*.ttf binary
+*.wav binary
+templates/**/vendor/** linguist-vendored
+brand/fonts/** linguist-vendored
+assets/** linguist-generated
+# Normalize line endings on text.
+* text=auto

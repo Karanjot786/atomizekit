@@ -4,6 +4,7 @@
 
 # atomizekit
 
+[![ci](https://github.com/Karanjot786/atomizekit/actions/workflows/ci.yml/badge.svg)](https://github.com/Karanjot786/atomizekit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Turn one idea into a week of content, without an API key and without letting a bot
@@ -54,12 +55,12 @@ From a registry — browse [agentskills.in](https://www.agentskills.in/) (search
 agents:
 
 ```bash
-npm install -g agent-skills-cli
-skills add Karanjot786/atomizekit          # from GitHub
-# skills install @Karanjot786/atomizekit   # once listed on the agentskills.in marketplace
+npx agent-skills-cli add Karanjot786/atomizekit
 ```
 
-Also on skills.sh: `npx skills add Karanjot786/atomizekit`.
+```bash
+npx skills add Karanjot786/atomizekit
+```
 
 If a registry install doesn't show up, an open Claude Code issue
 ([#53950](https://github.com/anthropics/claude-code/issues/53950)) can drop skills
