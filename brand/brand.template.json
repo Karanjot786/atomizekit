@@ -1,0 +1,17 @@
+{
+  "_instructions": "run /setup — do not fill by hand",
+  "name": "Acme Careers",
+  "domain": "acme.example",
+  "canonicalPattern": "https://acme.example/blog/{slug}",
+  "blogDir": "content/blog",
+  "distributionDir": "content/distribution",
+  "audience": "junior developers",
+  "voice": "specific tactics, not encouragement",
+  "author": "Jane Rivera",
+  "colors": { "bg": "#0A0A0B", "text": "#FAFAFA", "primary": "#2DD4BF", "accent": "#34D399" },
+  "fonts": { "display": "Geist", "body": "Inter", "displayFile": "brand/fonts/Geist-Bold.otf", "bodyFile": "brand/fonts/InterVariable.ttf" },
+  "logo": "brand/logo.svg",
+  "eyebrow": "Acme Data",
+  "platforms": ["x", "reddit", "linkedin", "instagram", "youtube", "medium", "substack"],
+  "features": [ { "match": "resume/ATS advice", "name": "Acme's free resume checker" } ]
+}

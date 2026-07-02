@@ -1,0 +1,2 @@
+Geist-Bold.otf — Geist typeface, SIL Open Font License 1.1 — https://github.com/vercel/geist-font
+InterVariable.ttf — Inter typeface, SIL Open Font License 1.1 — https://github.com/rsms/inter
