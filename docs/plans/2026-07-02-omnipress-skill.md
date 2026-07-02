@@ -16,8 +16,12 @@
 - Scripts must fail LOUD with a "run /setup first" message when brand.json is missing.
 - Draft-only contract preserved: nothing publishes or posts; the user posts manually.
 - Bundled fonts must be OFL-licensed (Geist + Inter are OFL — bundling legal); note licenses in `brand/fonts/LICENSES.txt`.
-- License: MIT (adjust in Task 7 if the research agent's finding differs).
-- Repo layout / install commands in README: adopt the research agent's findings (SKILL.md at repo root assumed; `npx skills add <owner>/omnipress` + manual clone instructions).
+- License: MIT (research-confirmed: MIT for instruction+glue skills; no license carry for invoking takumi/hyperframes CLIs — courtesy "third-party tools" README section only).
+- **RESEARCH AMENDMENTS (2026-07-02, applied from the packaging research):**
+  - **Name = `atomizekit`** ("omnipress" is taken on npm + CMS collisions; atomizekit clean on npm AND GitHub). Spec rule: frontmatter `name` MUST equal the directory name → repo dir renames to `~/Desktop/atomizekit` after Task 1; all "omnipress" refs in later tasks read as "atomizekit".
+  - Layout confirmed: SKILL.md at repo root, lowercase-hyphen name, body <500 lines, `license: MIT` frontmatter field supported.
+  - README install order: (1) `git clone https://github.com/<owner>/atomizekit ~/.claude/skills/atomizekit` (primary — native discovery), (2) project-local clone to `.claude/skills/`, (3) `npx skills add <owner>/atomizekit` WITH the caveat that anthropics/claude-code#53950 can leave npx-installed skills undiscovered.
+  - **Config resolution order (updates T1 lib_brand + T6):** `loadBrand()` checks `<cwd>/.claude/atomizekit.config.json` (host-project config — supports multiple projects/brands per install) FIRST, then `<skill>/brand/brand.json` fallback. `/setup` writes to the host `.claude/` path when cwd is a project, else the skill-dir path. Apply as a small T6-time patch to lib_brand.mjs + its test.
 
 ## Source → Destination map (used by Tasks 2–5)
 
