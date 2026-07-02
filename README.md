@@ -58,13 +58,13 @@ agents:
 npx agent-skills-cli add Karanjot786/atomizekit
 ```
 
+OR
+
 ```bash
 npx skills add Karanjot786/atomizekit
 ```
 
-If a registry install doesn't show up, an open Claude Code issue
-([#53950](https://github.com/anthropics/claude-code/issues/53950)) can drop skills
-into a folder the Skill tool doesn't scan — fall back to the manual `git clone` above.
+
 
 ## Quickstart
 
