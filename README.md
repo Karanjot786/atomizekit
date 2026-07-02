@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.png" alt="atomizekit — keyless content engine for Claude Code" width="100%">
+</p>
+
 # atomizekit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
