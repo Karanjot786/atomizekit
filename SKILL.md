@@ -66,6 +66,7 @@ the NEXT job reads. Run it periodically, not at the end of every piece.
 | `commands/write.md` | GEO-structured blog draft |
 | `commands/atomize.md` | Scaffold platform variants from the blog |
 | `commands/visuals.md` | Render image cards + reel + voiced short |
+| `commands/dashboard.md` | Local review dashboard: `node scripts/dashboard.mjs` — see all drafts + media, mark posted |
 | `references/playbook.md` | Per-platform voice rules (2026-researched) + brand weave + AI-tell avoidance |
 | `references/geo-writing.md` | How content earns AI-answer citations (structure, schema, data) |
 
