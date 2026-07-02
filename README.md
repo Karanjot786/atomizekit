@@ -50,15 +50,16 @@ cd ~/.claude/skills/atomizekit && npm install
 ```
 
 From a registry — browse [agentskills.in](https://www.agentskills.in/) (search
-"atomizekit"), or install from the command line:
+"atomizekit") and install with the Agent Skills CLI, which syncs a skill to 45+ AI
+agents:
 
 ```bash
-# via the /learn command (agentskill.sh ecosystem)
-/learn @Karanjot786/atomizekit
-
-# or the skills.sh CLI
-npx skills add Karanjot786/atomizekit
+npm install -g agent-skills-cli
+skills add Karanjot786/atomizekit          # from GitHub
+# skills install @Karanjot786/atomizekit   # once listed on the agentskills.in marketplace
 ```
+
+Also on skills.sh: `npx skills add Karanjot786/atomizekit`.
 
 If a registry install doesn't show up, an open Claude Code issue
 ([#53950](https://github.com/anthropics/claude-code/issues/53950)) can drop skills
