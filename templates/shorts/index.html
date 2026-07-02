@@ -1,0 +1,143 @@
+<!doctype html>
+<!--
+  atomizekit · voiced Shorts composition (hyperframes)
+  Kinetic-text Shorts: local Kokoro VO reads the script, each scene's text IS the
+  on-screen caption (no Whisper needed). Keyless, offline: local GSAP/fonts/logo.
+  Driven by scripts/render_short.mjs which writes ./vo.wav + passes variables:
+    { scenes: [{text, start, dur, kind?}], headline, url, totalDur, brand }
+  kind: "hook" | "body" | "cta" (layout varies per kind).
+  Brand tokens: :root custom properties below, overridden at runtime from
+  v.brand.colors (see the inline script).
+  NOTE: this dir is its own hyperframes composition root — ../video/... paths
+  404 (Studio preview + lint both resolve root-relative, not compositions-dir
+  relative) and lint flags them as invalid_parent_traversal_in_asset_path. So
+  vendor/gsap.min.js is vendored here too (not brand-specific, tracked in git),
+  and fonts/*, logo.svg are copied in by the builder (render_short.mjs) from
+  brand.json paths before each render — same pattern as ./vo.wav.
+-->
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="./vendor/gsap.min.js"></script>
+    <style>
+      :root { --bg: #0A0A0B; --text: #FAFAFA; --primary: #2DD4BF; --accent: #34D399; }
+      @font-face { font-family: "Geist"; src: url("./fonts/Geist-Bold.otf") format("opentype"); font-weight: 700; }
+      @font-face { font-family: "Inter"; src: url("./fonts/InterVariable.ttf") format("truetype"); font-weight: 100 900; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Inter", sans-serif; }
+      #root { position: relative; width: 1080px; height: 1920px; }
+      .glow { position: absolute; left: 50%; top: 42%; width: 1000px; height: 1000px; transform: translate(-50%,-50%);
+              background: radial-gradient(circle, rgba(45,212,191,0.14) 0%, rgba(10,10,11,0) 62%); }
+      .brand { position: absolute; top: 84px; left: 86px; display: flex; align-items: center; gap: 18px; z-index: 5; }
+      .brand img { width: 56px; height: 56px; border-radius: 12px; }
+      .brand span { font-family: "Geist"; font-weight: 700; font-size: 30px; letter-spacing: -0.5px; }
+      .url { position: absolute; bottom: 96px; left: 86px; font-size: 28px; font-weight: 500; color: #8b8b90; z-index: 5; }
+      .progress { position: absolute; top: 0; left: 0; height: 10px; background: var(--primary); width: 100%;
+                  transform-origin: left center; z-index: 6; }
+      .scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center;
+               padding: 0 86px; isolation: isolate; /* own stacking context, else negative-z bg hides behind body bg */ }
+      /* stock b-roll bed (static, builder-injected; track 0 = under the text scenes) */
+      .bedwrap { position: absolute; inset: 0; overflow: hidden; }
+      .bedwrap img, .bedwrap video { width: 100%; height: 100%; object-fit: cover; }
+      /* rgba shade encodes opacity over --bg's default RGB — left as a literal
+         default rather than color-mix() (kept simple per brief). */
+      .bedwrap .shade { position: absolute; inset: 0;
+                        background: linear-gradient(180deg, rgba(10,10,11,0.82) 0%, rgba(10,10,11,0.66) 50%, rgba(10,10,11,0.88) 100%); }
+      .scene .txt { font-family: "Geist"; font-weight: 700; letter-spacing: -1.5px; line-height: 1.08;
+                    white-space: pre-wrap; }
+      .scene[data-kind="hook"] .txt { font-size: 96px; text-align: left; }
+      .scene[data-kind="body"] .txt, .scene[data-kind="context"] .txt { font-size: 76px; text-align: left; }
+      .scene[data-kind="cta"]  .txt { font-size: 84px; text-align: center; color: var(--primary); }
+      .scene .idx { font-size: 30px; font-weight: 600; letter-spacing: 6px; text-transform: uppercase;
+                    color: var(--accent); margin-bottom: 28px; }
+      .scene[data-kind="cta"] .idx { text-align: center; }
+      .accent { color: var(--primary); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="45"
+         data-width="1080" data-height="1920">
+      <div class="glow"></div>
+      <div class="progress" id="progress"></div>
+      <div class="brand"><img src="./logo.svg" alt="" /><span id="brandName">Brand</span></div>
+      <div class="url" id="url">yourbrand.example</div>
+      <audio id="vo" class="clip" src="./vo.wav" data-start="0" data-duration="45" data-volume="1"></audio>
+      <!--BEDS--><!-- builder (render_short.mjs) replaces this marker with static per-scene
+           b-roll clips: hyperframes registers media from RAW html only, JS-injected
+           video/audio elements are ignored. Text scenes stay JS-injected (not media). -->
+      <!-- scenes injected below by the inline script, synchronously at parse time -->
+    </div>
+
+    <script>
+      const v = (window.__hyperframes && window.__hyperframes.getVariables)
+        ? (window.__hyperframes.getVariables() || {}) : {};
+      // Brand tokens: the builder passes v.brand = { name, eyebrow, domain, colors }
+      // (see scripts/render_short.mjs). Set CSS custom properties from brand.colors
+      // when present so :root's hardcoded defaults above only apply pre-/setup.
+      if (v.brand && v.brand.colors) {
+        const rootStyle = document.documentElement.style;
+        for (const [k, val] of Object.entries(v.brand.colors)) {
+          if (val) rootStyle.setProperty(`--${k}`, val);
+        }
+      }
+      const brandName = v.brand?.name ?? "Brand";
+      document.getElementById("brandName").textContent = brandName;
+      // Fixture fallback so lint/preview works without the builder.
+      const scenes = v.scenes || [
+        { text: "Half your rejections happen\nbefore a human sees you.", start: 0, dur: 3, kind: "hook" },
+        { text: "Match 70-80% of the exact\nkeywords in the posting.", start: 3, dur: 3, kind: "body" },
+        { text: "Check yours free →\nyourbrand.example/tool", start: 6, dur: 3, kind: "cta" },
+      ];
+      const totalDur = v.totalDur || scenes.reduce((m, s) => Math.max(m, s.start + s.dur), 0);
+      const root = document.getElementById("root");
+      root.dataset.duration = String(totalDur);
+      const vo = document.getElementById("vo");
+      vo.dataset.duration = String(totalDur);
+      document.getElementById("url").textContent = (v.url || v.brand?.domain || "yourbrand.example").replace(/^https?:\/\/(www\.)?/, "").replace(/\/blog\/.*/, "");
+
+      // Highlight numbers + %/x tokens in teal (the data pops, matches card design).
+      const accentify = (t) =>
+        t.replace(/(\d[\d,.]*\s?(?:%|x|percent)?)/g, '<span class="accent">$1</span>');
+
+      const nBody = scenes.filter(s => (s.kind || "body") === "body").length;
+      let bodyIdx = 0;
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.to("#progress", { scaleX: 0, duration: totalDur, ease: "none" }, 0)
+        .from(".brand", { opacity: 0, y: -20, duration: 0.5 }, 0.1);
+
+      for (const s of scenes) {
+        const kind = s.kind || "body";
+        const el = document.createElement("div");
+        el.className = "scene clip";
+        el.dataset.kind = kind;
+        el.dataset.start = String(s.start);
+        el.dataset.duration = String(s.dur);
+        el.dataset.trackIndex = "1";
+        let idxLabel = "";
+        if (kind === "hook") idxLabel = brandName;
+        else if (kind === "context") idxLabel = "The problem";
+        else if (kind === "cta") idxLabel = "Do this now";
+        else { bodyIdx += 1; idxLabel = `Fix ${bodyIdx} of ${nBody}`; }
+        el.innerHTML = `<div class="idx">${idxLabel}</div><div class="txt">${accentify(s.text)}</div>`;
+        root.appendChild(el);
+        // Per-scene entrance: label first, text slides up; slight overshoot on hook/cta.
+        tl.from(el.querySelector(".idx"), { opacity: 0, y: 18, duration: 0.35 }, s.start + 0.05)
+          .from(el.querySelector(".txt"), {
+            opacity: 0, y: 46, duration: 0.55,
+            ease: kind === "body" ? "power2.out" : "back.out(1.4)",
+          }, s.start + 0.18);
+      }
+      // Ken Burns on builder-injected image beds (they exist in raw HTML at parse time).
+      for (const bed of document.querySelectorAll(".bedwrap")) {
+        const img = bed.querySelector("img");
+        if (!img) continue;
+        tl.fromTo(img, { scale: 1.0 },
+          { scale: 1.09, duration: parseFloat(bed.dataset.duration || "3"), ease: "none" },
+          parseFloat(bed.dataset.start || "0"));
+      }
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

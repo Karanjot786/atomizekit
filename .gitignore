@@ -4,4 +4,6 @@ data/
 brand/brand.json
 templates/*/vo.wav
 templates/*/assets/
+templates/*/fonts/
+templates/*/logo.svg
 .env*

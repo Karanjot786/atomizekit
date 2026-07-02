@@ -1,0 +1,165 @@
+<!doctype html>
+<!--
+  atomizekit · video composition (hyperframes)
+  On-brand animated DATA CLIP. Keyless, offline: local GSAP + local fonts, no CDN.
+  Brand tokens: :root custom properties below, overridden at runtime from
+  v.brand.colors (see the inline script). Data-driven:
+    npx hyperframes render templates/video -o <slug>/media/reel.mp4 --variables-file post.json
+  Variables (headline, stat, statLabel, url, brand) override the fixture defaults
+  below via window.__hyperframes.getVariables(). No voiceover here — this is the
+  silent data clip (Chrome + FFmpeg only, no Whisper/Kokoro). See render_reel.mjs
+  for the voiced variant.
+  NOTE: this dir's fonts/*, logo.svg are copied in by the builder (render_reel.mjs)
+  from brand.json paths before each render — hyperframes serves the composition
+  dir as the web root, so ../../brand/... paths would 404; ./fonts + ./logo.svg
+  stay self-contained instead (like ./vo.wav).
+-->
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="./vendor/gsap.min.js"></script>
+    <style>
+      :root { --bg: #0A0A0B; --text: #FAFAFA; --primary: #2DD4BF; --accent: #34D399; }
+      @font-face {
+        font-family: "Geist";
+        src: url("./fonts/Geist-Bold.otf") format("opentype");
+        font-weight: 700;
+      }
+      @font-face {
+        font-family: "Inter";
+        src: url("./fonts/InterVariable.ttf") format("truetype");
+        font-weight: 100 900;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px; overflow: hidden;
+        background: var(--bg); color: var(--text);
+        font-family: "Inter", sans-serif;
+      }
+      #root { position: relative; width: 1080px; height: 1920px; isolation: isolate; }
+      /* stock b-roll bed (optional, injected by JS when vars.bg set) */
+      .bed { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+      .bed img, .bed video { width: 100%; height: 100%; object-fit: cover; }
+      /* rgba glow/shade values encode opacity over --bg/--primary's default RGB —
+         left as literal defaults rather than color-mix() (kept simple per brief). */
+      .shade { position: absolute; inset: 0; z-index: -1;
+               background: linear-gradient(180deg, rgba(10,10,11,0.84) 0%, rgba(10,10,11,0.68) 50%, rgba(10,10,11,0.9) 100%); }
+      /* teal glow behind the hero stat */
+      .glow {
+        position: absolute; left: 50%; top: 46%;
+        width: 900px; height: 900px; transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(45,212,191,0.18) 0%, rgba(10,10,11,0) 60%);
+      }
+      .frame {
+        position: absolute; inset: 86px; /* ~8% safe margin */
+        display: flex; flex-direction: column;
+      }
+      .brand { display: flex; align-items: center; gap: 20px; }
+      .brand img { width: 64px; height: 64px; border-radius: 14px; }
+      .brand span { font-family: "Geist"; font-weight: 700; font-size: 34px; letter-spacing: -0.5px; }
+      .eyebrow {
+        margin-top: 120px; font-size: 30px; font-weight: 600; letter-spacing: 6px;
+        text-transform: uppercase; color: var(--accent);
+      }
+      .headline {
+        margin-top: 26px; font-family: "Geist"; font-weight: 700;
+        font-size: 92px; line-height: 1.02; letter-spacing: -2px; max-width: 860px;
+      }
+      .hero { margin-top: auto; margin-bottom: 40px; }
+      .stat {
+        font-family: "Geist"; font-weight: 700; color: var(--primary);
+        font-size: 420px; line-height: 0.86; letter-spacing: -10px;
+        text-shadow: 0 0 80px rgba(45,212,191,0.35);
+      }
+      .statLabel { font-size: 40px; font-weight: 600; color: var(--text); max-width: 760px; margin-top: 8px; }
+      .rule { height: 6px; width: 120px; background: var(--primary); border-radius: 3px; margin: 40px 0 28px; }
+      .url { font-size: 30px; font-weight: 500; color: #8b8b90; letter-spacing: 0.5px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="6"
+         data-width="1080" data-height="1920">
+      <!--BED--><!-- builder (render_reel.mjs) replaces markers with static media
+           elements: hyperframes scans media from RAW html, JS-injected ones are ignored -->
+      <div class="glow"></div>
+      <div class="frame">
+        <div class="brand">
+          <img src="./logo.svg" alt="" />
+          <span id="brandName">Brand</span>
+        </div>
+        <div class="eyebrow" id="eyebrow">Data</div>
+        <div class="headline" id="headline"></div>
+        <div class="hero">
+          <div class="stat" id="stat">0</div>
+          <div class="statLabel" id="statLabel"></div>
+        </div>
+        <div class="rule" id="rule"></div>
+        <div class="url" id="url"></div>
+      </div>
+    </div>
+
+    <script>
+      // Data-driven with fixture fallback. Real stat "847" is from the source blog post.
+      const v = (window.__hyperframes && window.__hyperframes.getVariables)
+        ? (window.__hyperframes.getVariables() || {}) : {};
+      // Brand tokens: the builder passes v.brand = { name, eyebrow, domain, colors }
+      // (see scripts/render_reel.mjs). Set CSS custom properties from brand.colors
+      // when present so :root's hardcoded defaults above only apply pre-/setup.
+      if (v.brand && v.brand.colors) {
+        const root = document.documentElement.style;
+        for (const [k, val] of Object.entries(v.brand.colors)) {
+          if (val) root.setProperty(`--${k}`, val);
+        }
+      }
+      const data = {
+        headline: v.headline || "The Gen Z job-search funnel, by the numbers",
+        stat: v.stat != null ? String(v.stat) : "847",
+        statLabel: v.statLabel || "recent grads landed offers using this system",
+        url: v.url || v.brand?.domain || "yourbrand.example",
+        eyebrow: v.eyebrow || v.brand?.eyebrow || "Data",
+        brandName: v.brand?.name ?? "Brand",
+      };
+      document.getElementById("brandName").textContent = data.brandName;
+      document.getElementById("headline").textContent = data.headline;
+      document.getElementById("statLabel").textContent = data.statLabel;
+      document.getElementById("url").textContent =
+        data.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/blog\/.*/, ""); // domain only on screen
+      document.getElementById("eyebrow").textContent = data.eyebrow;
+
+      // total runtime: silent default 6s, or VO length + tail when voiced.
+      // Bed + audio elements are STATIC (builder-injected at the markers above).
+      const total = Math.max(6, (v.voDur ? v.voDur + 0.6 : 0));
+
+      // Count-up target: parse the leading number of stat (handles "847", "72%", "3.5x")
+      const num = parseFloat(String(data.stat).replace(/[^0-9.]/g, "")) || 0;
+      const suffix = String(data.stat).replace(/^[0-9.,\s]+/, ""); // "%", "x", etc.
+      const isInt = Number.isInteger(num);
+      const statEl = document.getElementById("stat");
+      const counter = { n: 0 };
+
+      // hyperframes seeks this paused timeline per frame -> deterministic render.
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.from(".brand", { opacity: 0, y: -24, duration: 0.6 }, 0.1)
+        .from("#eyebrow", { opacity: 0, y: 20, duration: 0.5 }, 0.35)
+        .from("#headline", { opacity: 0, y: 40, duration: 0.7 }, 0.5)
+        .to(counter, {
+          n: num, duration: 1.6, ease: "power2.out",
+          onUpdate: () => {
+            const val = isInt ? Math.round(counter.n) : counter.n.toFixed(1);
+            statEl.textContent = val + suffix;
+          },
+        }, 1.1)
+        .from("#stat", { opacity: 0, scale: 0.8, duration: 0.6, ease: "back.out(1.6)" }, 1.1)
+        .from("#statLabel", { opacity: 0, y: 20, duration: 0.5 }, 2.4)
+        .from("#rule", { scaleX: 0, transformOrigin: "left center", duration: 0.5 }, 2.7)
+        .from("#url", { opacity: 0, duration: 0.5 }, 3.0)
+        .to({}, { duration: Math.max(1.4, total - 4.6) }); // hold to the end (VO may run past 6s)
+      if (document.getElementById("bedimg")) {
+        tl.fromTo("#bedimg", { scale: 1.0 }, { scale: 1.08, duration: total, ease: "none" }, 0); // Ken Burns
+      }
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

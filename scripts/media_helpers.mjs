@@ -1,7 +1,8 @@
-// Shared media helpers: shell runner + relevance-scored stock fetch.
+// Shared media helpers: shell runner + relevance-scored stock fetch + brand asset sync.
 // Used by render_short.mjs (voiced Short) and render_reel.mjs (stat reel).
 import { spawnSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, copyFileSync, mkdirSync, existsSync } from "node:fs";
+import path from "node:path";
 
 export const run = (cmd, cmdArgs, opts = {}) => {
   const r = spawnSync(cmd, cmdArgs, { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"], ...opts });
@@ -11,6 +12,31 @@ export const run = (cmd, cmdArgs, opts = {}) => {
   }
   return r.stdout;
 };
+
+// hyperframes serves each composition dir (templates/video, templates/shorts) as
+// its own web root, so templates can't reach up to ../../brand/... for the logo
+// or fonts (Studio preview + `hyperframes lint` both flag/404 that traversal).
+// Builders copy the brand's logo + fonts INTO the template dir before every
+// render instead — a working file synced from brand.json, exactly like ./vo.wav.
+// Destination filenames are fixed to what the template's CSS/<img> literally
+// references (fonts/<basename>, ./<logo-basename>), so a brand can swap the
+// FILE at that brand.json path without editing any template markup.
+export function copyBrandAssets(skillRoot, brand, templateDir) {
+  const fontsDir = path.join(templateDir, "fonts");
+  mkdirSync(fontsDir, { recursive: true });
+  const pairs = [
+    [path.join(skillRoot, brand.fonts.displayFile), path.join(fontsDir, path.basename(brand.fonts.displayFile))],
+    [path.join(skillRoot, brand.fonts.bodyFile), path.join(fontsDir, path.basename(brand.fonts.bodyFile))],
+    [path.join(skillRoot, brand.logo), path.join(templateDir, path.basename(brand.logo))],
+  ];
+  for (const [src, dest] of pairs) {
+    if (!existsSync(src)) {
+      console.error(`missing required brand asset: ${src}`);
+      process.exit(1);
+    }
+    copyFileSync(src, dest);
+  }
+}
 
 // Stock b-roll per scene (real footage, never AI-generated). Network happens HERE
 // (the build step); the hyperframes render itself stays offline on cached assets.
