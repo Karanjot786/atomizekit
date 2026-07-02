@@ -40,24 +40,29 @@ whole thing inside every platform's terms of service.
 
 ```bash
 # Recommended: Claude Code discovers skills here natively
-git clone https://github.com/<owner>/atomizekit ~/.claude/skills/atomizekit
+git clone https://github.com/Karanjot786/atomizekit ~/.claude/skills/atomizekit
 
 # or project-local, committed with your repo
-git clone https://github.com/<owner>/atomizekit .claude/skills/atomizekit
+git clone https://github.com/Karanjot786/atomizekit .claude/skills/atomizekit
 
 # install the render dependencies
 cd ~/.claude/skills/atomizekit && npm install
 ```
 
-Also on the skills.sh registry:
+From a registry — browse [agentskills.in](https://www.agentskills.in/) (search
+"atomizekit"), or install from the command line:
 
 ```bash
-npx skills add <owner>/atomizekit
+# via the /learn command (agentskill.sh ecosystem)
+/learn @Karanjot786/atomizekit
+
+# or the skills.sh CLI
+npx skills add Karanjot786/atomizekit
 ```
 
-One caveat: an open Claude Code issue ([#53950](https://github.com/anthropics/claude-code/issues/53950))
-can drop `npx skills add` installs into a folder the Skill tool doesn't scan. If the
-skill doesn't show up, use the manual `git clone` above.
+If a registry install doesn't show up, an open Claude Code issue
+([#53950](https://github.com/anthropics/claude-code/issues/53950)) can drop skills
+into a folder the Skill tool doesn't scan — fall back to the manual `git clone` above.
 
 ## Quickstart
 
