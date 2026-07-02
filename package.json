@@ -11,7 +11,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node --test --test-concurrency=1 'scripts/tests/*.test.mjs' && node scripts/check_render.mjs"
+    "test": "node --test --test-concurrency=1 'scripts/tests/*.test.mjs' 'scripts/geo/tests/*.test.ts' && node scripts/check_render.mjs"
   },
   "keywords": [],
   "author": "Karanjot Singh",
