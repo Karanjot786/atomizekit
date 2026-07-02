@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 // check_render.mjs — ponytail: smallest thing that fails if render breaks.
 //
-// If brand/brand.json is missing (fresh clone, /setup not run yet), this
-// self-provisions a temporary one from brand.template.json so the render
-// pipeline itself can still be smoke-tested — and deletes it afterward.
+// Resolves brand data with the SAME order as scripts/lib_brand.mjs's
+// loadBrand(): <cwd>/.claude/atomizekit.config.json first, then
+// <skill>/brand/brand.json. This matters because this script forwards its
+// own cwd to the render_cards.mjs subprocess below, which resolves brand
+// data itself via loadBrand() — if the two disagreed on which config to
+// read, a host project with a non-default `distributionDir` would make
+// this script look for PNGs in the wrong place. If NEITHER config exists
+// (fresh clone, /setup never run), self-provisions a temporary
+// <skill>/brand/brand.json from brand.template.json so the render pipeline
+// itself can still be smoke-tested — and deletes it afterward.
 // Seeds the neutral demo fixture (brand/demo-post.json), re-renders it,
 // and asserts the 4 PNGs exist at the exact required dimensions.
 // Exit 1 on any failure.
@@ -35,20 +42,23 @@ function readPngDimensions(filePath) {
   return [width, height];
 }
 
+const cwdConfigPath = path.join(process.cwd(), ".claude", "atomizekit.config.json");
 const brandPath = path.join(SKILL_ROOT, "brand", "brand.json");
 const templatePath = path.join(SKILL_ROOT, "brand", "brand.template.json");
 const demoFixturePath = path.join(SKILL_ROOT, "brand", "demo-post.json");
 
+let resolvedBrandPath = existsSync(cwdConfigPath) ? cwdConfigPath : brandPath;
 let tempBrand = false;
-if (!existsSync(brandPath)) {
+if (!existsSync(cwdConfigPath) && !existsSync(brandPath)) {
   copyFileSync(templatePath, brandPath);
   tempBrand = true;
-  console.log("no brand/brand.json — self-provisioning from brand.template.json for this check (removed after)");
+  resolvedBrandPath = brandPath;
+  console.log("no <cwd>/.claude/atomizekit.config.json and no brand/brand.json — self-provisioning from brand.template.json for this check (removed after)");
 }
 
 let failed = false;
 try {
-  const brand = JSON.parse(readFileSync(brandPath, "utf-8"));
+  const brand = JSON.parse(readFileSync(resolvedBrandPath, "utf-8"));
   const slugDir = path.join(process.cwd(), brand.distributionDir, SLUG);
   mkdirSync(slugDir, { recursive: true });
   copyFileSync(demoFixturePath, path.join(slugDir, "post.json"));

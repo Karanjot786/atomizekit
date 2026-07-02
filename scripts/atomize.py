@@ -40,10 +40,20 @@ def skill_root():
 
 
 def load_brand():
-    p = os.path.join(skill_root(), "brand", "brand.json")
-    if not os.path.exists(p):
-        sys.exit("no brand/brand.json — run the skill's /setup first (it interviews you and writes it)")
-    return json.load(open(p, encoding="utf-8"))
+    # Config resolution order (RESEARCH AMENDMENTS, 2026-07-02): the host
+    # project's own <cwd>/.claude/atomizekit.config.json is checked FIRST
+    # (one skill install can serve multiple projects/brands), then
+    # <skill>/brand/brand.json is the fallback for a standalone setup.
+    cwd_config = os.path.join(os.getcwd(), ".claude", "atomizekit.config.json")
+    if os.path.exists(cwd_config):
+        return json.load(open(cwd_config, encoding="utf-8"))
+    skill_brand = os.path.join(skill_root(), "brand", "brand.json")
+    if os.path.exists(skill_brand):
+        return json.load(open(skill_brand, encoding="utf-8"))
+    sys.exit(
+        "no <cwd>/.claude/atomizekit.config.json and no <skill>/brand/brand.json — "
+        "run the skill's /setup first (it interviews you and writes one)"
+    )
 
 
 def read_blog(slug, blog_dir, brand_blog_dir):

@@ -14,6 +14,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { mkdirSync } from "node:fs";
 
 const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const brandPath = path.join(SKILL_ROOT, "brand", "brand.json");
@@ -93,5 +94,46 @@ test("atomize.py fails loud with 'run /setup first' when brand/brand.json is mis
   } finally {
     rmSync(fakeBlogDir, { recursive: true, force: true });
     rmSync(tempCwd, { recursive: true, force: true });
+  }
+});
+
+test("atomize.py: <cwd>/.claude/atomizekit.config.json wins over <skill>/brand/brand.json", () => {
+  // Same resolution order as scripts/lib_brand.mjs (RESEARCH AMENDMENTS,
+  // 2026-07-02): host-project cwd config first, skill-dir brand.json falls
+  // back only when no cwd config exists.
+  assert.ok(!existsSync(brandPath), "this test requires brand/brand.json to be absent (it is gitignored)");
+
+  const template = JSON.parse(readFileSync(templatePath, "utf-8"));
+  const { _instructions, ...contractOnly } = template;
+
+  // Skill-dir fallback brand, distinguishable from the cwd config by domain
+  // (used to build the canonical URL we assert on below).
+  writeFileSync(brandPath, JSON.stringify({ ...contractOnly, domain: "skill-dir-fallback.example", canonicalPattern: "https://skill-dir-fallback.example/blog/{slug}" }));
+
+  const fakeBlogDir = mkdtempSync(path.join(os.tmpdir(), "atomizekit-fake-blog-"));
+  const tempCwd = mkdtempSync(path.join(os.tmpdir(), "atomizekit-cwd-"));
+
+  try {
+    mkdirSync(path.join(tempCwd, ".claude"), { recursive: true });
+    const cwdConfig = { ...contractOnly, domain: "cwd-project.example", canonicalPattern: "https://cwd-project.example/blog/{slug}" };
+    writeFileSync(path.join(tempCwd, ".claude", "atomizekit.config.json"), JSON.stringify(cwdConfig));
+
+    writeFileSync(path.join(fakeBlogDir, "demo.mdx"), "---\ntitle: Demo Post\n---\nbody");
+
+    const result = spawnSync(
+      "python3",
+      [path.join(SKILL_ROOT, "scripts", "atomize.py"), "--slug", "demo", "--blog-dir", fakeBlogDir],
+      { cwd: tempCwd, encoding: "utf-8" }
+    );
+
+    assert.equal(result.status, 0, `atomize.py exited ${result.status}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`);
+
+    const outDir = path.join(tempCwd, cwdConfig.distributionDir, "demo");
+    const post = JSON.parse(readFileSync(path.join(outDir, "post.json"), "utf-8"));
+    assert.equal(post.url, "https://cwd-project.example/blog/demo", "cwd/.claude/atomizekit.config.json must win over the skill-dir brand.json fallback");
+  } finally {
+    rmSync(fakeBlogDir, { recursive: true, force: true });
+    rmSync(tempCwd, { recursive: true, force: true });
+    if (existsSync(brandPath)) unlinkSync(brandPath);
   }
 });
